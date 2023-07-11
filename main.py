@@ -9,7 +9,8 @@ app = Flask(__name__)
 @app.route('/')  # Это главная страница сайта
 @app.route('/index')
 def index():
-    #user = "Слушатель" - старый метод
+    #- старый метод
+    #user = "Слушатель"
     # redirect('/load_photo')  безусловный редирект, перекидывает сразу на эту форму
    # return render_template('index.html', title='Работа с шаблонами',username=user)
     param= {}
@@ -28,6 +29,16 @@ def news():
         news_list = json.loads(f.read())
     return render_template('news.html', title='Новости',
                             news=news_list )
+
+
+
+@app.route('/var_test')
+def var_test():
+    return  render_template('var_test.html', title='Переменные в HTML')
+
+
+
+
 
 
 @app.route('/slogan')
@@ -304,6 +315,10 @@ def load_photo():
         # request.files['file'] используем этот метод , но он только если есть ключ,  request.form.get('file') если его нет
         f.save('./static/images/loaded.png')
         return '<h1>Файл у вас на сервере</h1>'
+
+
+
+
 
 
 
