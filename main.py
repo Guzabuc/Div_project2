@@ -1,44 +1,38 @@
-from flask import Flask, url_for, request
+from flask import Flask, url_for, request, redirect
+from flask import render_template
+import json
+
 
 app = Flask(__name__)
 
-@app.route('/')   # Это главная страница сайта
+
+@app.route('/')  # Это главная страница сайта
 @app.route('/index')
 def index():
-    return 'Адмирал<br><a href ="/slogan">slogan</a>'
+    #user = "Слушатель" - старый метод
+    # redirect('/load_photo')  безусловный редирект, перекидывает сразу на эту форму
+   # return render_template('index.html', title='Работа с шаблонами',username=user)
+    param= {}
+    param['username'] = 'Ученик'
+    param['titel'] = 'Работа с шаблонами'
+    return render_template('index.html', **param)
 
-@app.route('/poster')
-def poster():
-    return f"""<!DOCTYPE html>
-    
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Постер</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N" crossorigin="anonymous">
-    <link rel="stylesheet" type= "text/css" href="{url_for('static', filename='css/style.css')}">
-</head>
-<body>
-<h1 class="red">Постер к фильму</h1>
 
-<img height ="429" width="417" src="{url_for('static', filename='images/admiral1.png')}"
-alt="Здесь должна была быть картинка, но не нашлась">
-<p>И крепка, как смерть, любовь</p>
-<p class="text-primary">.text-primary</p>
-<p class="text-secondary">.text-secondary</p>
-<p class="text-success">.text-success</p>
-<p class="text-danger">.text-danger</p>
+@app.route('/odd_even')
+def odd_even():
+    return render_template('odd_even.html', number=2)
 
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct" crossorigin="anonymous"></script>
-</body>
-</html>
-"""
+@app.route('/news')
+def news():
+    with open('news.json', 'rt', encoding='utf-8') as f:
+        news_list = json.loads(f.read())
+    return render_template('news.html', title='Новости',
+                            news=news_list )
+
 
 @app.route('/slogan')
 def slogan():
     return 'какая то цитата<br><a href ="/">Назад</a>'
-
 
 
 @app.route('/countdown')
@@ -47,8 +41,9 @@ def countdown():
     lst.append('Start!!!')
     return '<br>'.join(lst)
 
+
 @app.route('/greeting/<username>')
-def freeting(username):
+def greeting(username):
     return f"""<!DOCTYPE html>
 
 <html lang="en">
@@ -108,6 +103,7 @@ alt="Здесь должна была быть картинка, но не на�
 </body>
 </html>
 """
+
 
 @app.route('/variants/<int:var>')
 def variants(var):
@@ -173,7 +169,8 @@ def variants(var):
     else:
         return " не знаю о чем вы"
 
-@app.route('/slideshow')    # карусель
+
+@app.route('/slideshow')  # карусель
 def slideshow():
     return f"""<!DOCTYPE html>
 
@@ -275,49 +272,51 @@ def slideshow():
     </html>
     """
 
-@app.route('/form_sample', methods=['GET','POST'])
-def form_sample():
-    if request.method=='GET':
-        return f"""<!DOCTYPE html>
 
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <title>Пример формы</title>
-            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N" crossorigin="anonymous">
-            <link rel="stylesheet" type= "text/css" href="{url_for('static', filename='css/style.css')}">
-        </head>
-        <body>
-        <h1> Форма для регистрации </h1>
-         <div class="container">
-         <form class="login_form" method="post">
-         
-         <input type="text" class="form-control" name="fname"  placeholder="Имя">
-          <input type="text" class="form-control" name="sname"  placeholder="Фамилия"><br>
-          <input type="email" class="form-control" name="email" placeholder="name@example.com">
-          <input type="password" class="form-control" name="password" placeholder="Password">
-          <div class="form-group">
-          <label form="classSelect">Ваше образование</label>
-          <select class= "form-control" id="classSelect" name="profession">
-                <option selected>Высшее</option>
-                <option>Среднее</option>
-          </div>
-         <button class="btn btn-primary" type="submit">Отправить</button>
-          </form>
-         
-        
-        <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct" crossorigin="anonymous"></script>
-        </body>
-        </html>
-        """
+@app.route('/form_sample', methods=['GET', 'POST'])
+def form_sample():
+    if request.method == 'GET':
+        with open('./templates/user_form.html', 'r', encoding='utf-8') as html_stream:
+            return html_stream.read()
     elif request.method == 'POST':
+        print(request.method)
         print(request.form['fname'])
         print(request.form['sname'])
-        print(request.form['email'])
-        print(request.form['password"'])
         return ('Форма отправлена')
+
+
+@app.route('/load_photo', methods=['GET', 'POST'])
+def load_photo():
+    if request.method == 'GET':
+        return f"""
+        <form class="login_form" method="post" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="photo"> Приложите фото</label>
+            <input type="file" class="from-control-file" id="photo" name="file">
+            
+        </div>
+        <button type="submit" class="btn btn-primary" >Отправить</button>
+        
+        </form>
+        """
+    elif request.method == 'POST':
+        f = request.files['file']
+        # request.files['file'] используем этот метод , но он только если есть ключ,  request.form.get('file') если его нет
+        f.save('./static/images/loaded.png')
+        return '<h1>Файл у вас на сервере</h1>'
+
 
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000, debug=True)
+
+
+
+# GET - запрашивает данные, не меняя состояния сервера
+# POST - отправляет данные на сервер
+# PUT  - заменяет все текущие данные на сервере, данными запроса
+# DELETE - удаляет указанные данные
+# PATCH - частичная замена данных
+
+
+
