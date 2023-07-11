@@ -15,7 +15,7 @@ def index():
    # return render_template('index.html', title='Работа с шаблонами',username=user)
     param= {}
     param['username'] = 'Ученик'
-    param['titel'] = 'Работа с шаблонами'
+    param['title'] = 'Раширяем шаблоны'
     return render_template('index.html', **param)
 
 
@@ -36,11 +36,6 @@ def news():
 def var_test():
     return  render_template('var_test.html', title='Переменные в HTML')
 
-
-
-
-
-
 @app.route('/slogan')
 def slogan():
     return 'какая то цитата<br><a href ="/">Назад</a>'
@@ -53,26 +48,7 @@ def countdown():
     return '<br>'.join(lst)
 
 
-@app.route('/greeting/<username>')
-def greeting(username):
-    return f"""<!DOCTYPE html>
 
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{username}</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N" crossorigin="anonymous">
-    <link rel="stylesheet" type= "text/css" href="{url_for('static', filename='css/style.css')}">
-</head>
-<body>
-<h1 >Привет, {username}</h1>
-
-
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct" crossorigin="anonymous"></script>
-</body>
-</html>
-"""
 
 
 @app.route('/nekrasov')
@@ -287,34 +263,30 @@ def slideshow():
 @app.route('/form_sample', methods=['GET', 'POST'])
 def form_sample():
     if request.method == 'GET':
-        with open('./templates/user_form.html', 'r', encoding='utf-8') as html_stream:
-            return html_stream.read()
+        return render_template('user_form.html', title='Форма')
     elif request.method == 'POST':
-        print(request.method)
-        print(request.form['fname'])
-        print(request.form['sname'])
-        return ('Форма отправлена')
+        myform = request.form.to_dict()
+
+        print(myform)
+        return render_template('filled_form.html',
+                               title='Ваша форма',
+                               data=myform)
+
+
 
 
 @app.route('/load_photo', methods=['GET', 'POST'])
 def load_photo():
     if request.method == 'GET':
-        return f"""
-        <form class="login_form" method="post" enctype="multipart/form-data">
-        <div class="form-group">
-            <label for="photo"> Приложите фото</label>
-            <input type="file" class="from-control-file" id="photo" name="file">
-            
-        </div>
-        <button type="submit" class="btn btn-primary" >Отправить</button>
-        
-        </form>
-        """
+        return render_template('user_form.html', title= 'Форма')
+
+
     elif request.method == 'POST':
         f = request.files['file']
         # request.files['file'] используем этот метод , но он только если есть ключ,  request.form.get('file') если его нет
         f.save('./static/images/loaded.png')
-        return '<h1>Файл у вас на сервере</h1>'
+        myform = request.form.to_dict()
+        return render_template('filled_form.html', title='Ваши данные', data=myform)
 
 
 
