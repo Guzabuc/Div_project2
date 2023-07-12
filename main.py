@@ -1,9 +1,29 @@
 from flask import Flask, url_for, request, redirect
 from flask import render_template
 import json
-
+import requests
+from datetime import datetime
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'too short key'
+# секретный ключ - чтобы не украли наш сайт,
+# чем длиннее и непонятней, тем лучше
+
+
+
+# ошибка 404
+@app.errorhandler(404)
+def http_404_error(error):
+    return redirect('/error404')
+
+
+@app.route('/error404')
+def well():   # колодец
+    return render_template('well.html')
+
+
+
+
 
 
 @app.route('/')  # Это главная страница сайта
@@ -47,49 +67,6 @@ def countdown():
     lst.append('Start!!!')
     return '<br>'.join(lst)
 
-
-
-
-
-@app.route('/nekrasov')
-def nekrasov():
-    return f"""
-    <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Постер</title>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N" crossorigin="anonymous">
-    <link rel="stylesheet" type= "text/css" href="{url_for('static', filename='css/style.css')}">
-
-    
-</head>
-<body>
-
-<div class="container text-center">
-  <div class="row">
-    <div class="col">
-  <h1>Постер к фильму</h1>
-<img src="{url_for('static', filename='images/nekrasov.png')}"
-alt="Здесь должна была быть картинка, но не нашлась">  
-    </div>
-    <div class="col">
-<div class="p-3 mb-2 bg-primary text-white">.bg-primary</div>
-<div class="p-3 mb-2 bg-secondary text-white">.bg-secondary</div>
-<div class="p-3 mb-2 bg-success text-white">.bg-success</div>
-<div class="p-3 mb-2 bg-danger text-white">.bg-danger</div>
-<div class="p-3 mb-2 bg-warning text-dark">.bg-warning</div>    
-    </div>
-  </div>
-
-
-
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct" crossorigin="anonymous"></script>
-
-</body>
-</html>
-"""
 
 
 @app.route('/variants/<int:var>')
@@ -265,20 +242,19 @@ def form_sample():
     if request.method == 'GET':
         return render_template('user_form.html', title='Форма')
     elif request.method == 'POST':
+        f = request.files['file']  # request.form.get('file')
+        f.save('./static/images/loaded.png')
         myform = request.form.to_dict()
 
-        print(myform)
         return render_template('filled_form.html',
                                title='Ваша форма',
                                data=myform)
 
 
-
-
 @app.route('/load_photo', methods=['GET', 'POST'])
 def load_photo():
     if request.method == 'GET':
-        return render_template('user_form.html', title= 'Форма')
+        return render_template('user_form.html', title='Форма')
 
 
     elif request.method == 'POST':
@@ -289,13 +265,38 @@ def load_photo():
         return render_template('filled_form.html', title='Ваши данные', data=myform)
 
 
+@app.route('/weather_form', methods=['GET', 'POST'])
+def weather_form():
+    if request.method == 'GET':
+        return render_template('weather_form.html', title='Выбор города')
+    elif request.method == 'POST':
+        town = request.form.get('town')
+        data = {}
+        key = '06d3cdd940dbee91c85e8dedf7a91f78'
+        url ='http://api.openweathermap.org/data/2.5/weather'
+        params = {'APPID': key, 'q': town, 'units': 'metric'}
+        result = requests.get(url, params=params)
+        weather =result.json()
+        code = weather['cod']
+        icon = weather['weather'][0]['icon']
+        time = weather['sys']['sunset']
+        time_true =datetime.utcfromtimestamp(time).strftime("%H:%M")
 
+       # заполняем словарь
+        data['time'] = time_true
+        data['humidity']=weather['main']['humidity']
+        data['code']= code
+        data['icon'] = icon
+        data['temp']= weather['main']['temp']
+        return render_template('weather.html', title=f'Погода в городе {{town}}',
 
+                               data = data)
 
-
+# &deg; - значек градуса
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000, debug=True)
+
 
 
 
