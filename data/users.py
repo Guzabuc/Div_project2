@@ -1,21 +1,12 @@
-# import datetime
-# import sqlalchemy
-# from .db_session import SqlAlchemyBase
-#
-# class User(SqlAlchemyBase):
-#
-#     __tablename__ = 'users'
-#
 #     #  __tablename__ служебный атрибут , т.о мы создаем таблицу с имененм 'users'
 #     # autoincrement Автоматическое приращение позволяет автоматически генерировать уникальное число при вставке новой записи в
 #     # nullable - не может быть нулем
-
-
 
 import datetime
 import sqlalchemy
 from sqlalchemy import orm
 from .db_session import SqlAlchemyBase
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 class User(SqlAlchemyBase):
@@ -37,3 +28,10 @@ class User(SqlAlchemyBase):
         return f'{self.name} - {self.email}'
     # возвращает Mark - plumer_mark@yyy.ru
 
+    # хеширование пароля
+    def set_password(self, password):
+        self.hashed_password = generate_password_hash(password)
+
+    # сверяем пароль с введеным паролем
+    def check_password(self, password):
+        return check_password_hash(self.hashed_password, password)

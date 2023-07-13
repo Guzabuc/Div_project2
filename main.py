@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 from data import db_session
 from data.users import User
 from data.news import News
+# forms.user - путь к файлу, импортируем класс RegisterForm
+from forms.user import RegisterForm
 
 
 app = Flask(__name__)
@@ -23,6 +25,38 @@ app.config['SQLAlCHEMY_DATABASE_URI'] = 'sqlite:///db/news.sqlite'
 @app.route('/success')
 def success():
     return 'Success'
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    form = RegisterForm()
+    if form.validate_on_submit():
+
+        # form.password != form.password_again - проверяем введенные пароли в register.html
+        # form.password.data - .data отсылка к данным, если ее не будет , то отылка идет к объекту
+        if form.password.data != form.password_again.data:
+            return render_template('register.html', title='Проблемы с регистрацией',
+                                   message='Пароли не совпадают', form=form)
+        db_sess = db_session.create_session()
+        # User.email == form.email.data - роверка на повторную регистрацию
+        if db_sess.query(User).filter(User.email == form.email.data).first():
+            return render_template('register.html',
+                                   title='Проблемы с регистрацией',
+                                   message='Пользователь с такой почтой уже есть', form=form)
+        # если все правильно , записываем в базу нового пользователя
+        user = User(name=form.name.data,
+                    email=form.email.data,
+                    about=form.about.data)
+        user.set_password(form.password.data)
+        db_sess.add(user)
+        db_sess.commit()
+        return redirect('/login')
+    return render_template('register.html', title='Регистрация', form=form)
+
+
+
+
+
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
@@ -42,16 +76,24 @@ def well():  # колодец
 
 
 @app.route('/')  # Это главная страница сайта
+
 @app.route('/index')
 def index():
     # - старый метод
     # user = "Слушатель"
     # redirect('/load_photo')  безусловный редирект, перекидывает сразу на эту форму
     # return render_template('index.html', title='Работа с шаблонами',username=user)
-    param = {}
-    param['username'] = 'Ученик'
-    param['title'] = 'Раширяем шаблоны'
-    return render_template('index.html', **param)
+    # - старый метод
+    # param = {}
+    # param['username'] = 'Ученик'
+    # param['title'] = 'Раширяем шаблоны'
+    # Работу с БД начинается с открытия сессии
+
+    #сайт открывается с новостей
+    db_sess = db_session.create_session()
+    news = db_sess.query(News).filter(News.is_private != True)
+
+    return render_template('index.html', title='Новости', news=news)
 
 
 @app.route('/odd_even')
@@ -139,63 +181,7 @@ def weather_form():
 
 
 if __name__ == '__main__':
-    # подключаемся к бд
+
     db_session.global_init('db/news.sqlite')
-
-    # app.run(host='127.0.0.1', port=5000, debug=True)
-
     db_sess = db_session.create_session()   # подключение к базе данных
-
-    #  user = db_sess.query(User).first() # одключаюсь к классу User к первому .first пользователю
-    # users = db_sess.query(User).all()  #  ыводит всех
-
-    # в сложных запросах  &- и  |- или
-    # users = db_sess.query(User).filter(User.email.like('%v%'))
-    # аменяем волдемарта на володя
-    # users = db_sess.query(User).filter(User.id == 1).first()
-    # id == 1).first() -
-
-    # for user in users:
-    #     print(user.name)  # Voldemar
-    #     user.name = 'Volodia'
-    #     print(user.name)
-    #     db_sess.commit()  # - заменить содержание
-
-    # удаляем одного пользователя полностью
-    # user = db_sess.query(User).filter(User.name == 'имя').first()
-    # db_sess.delete(user)
-    # db_sess.commit()
-
-    # создание юзеров в таблицу юзер
-    # user = User()
-    # user.name = 'Mark'
-    # user.about = 'Plumer'
-    # user.email = 'plumer_mark@yyy.ru'
-    # db_sess = db_session.create_session()
-    # db_sess.add(user)
-    # db_sess.commit()
-    # присваиваем к новости второй от пользователя его ид  из базы
-    # удалить пользователей у кого ид больше 3
-    # db_sess.query(User).filter(User.id >3).delete()
-
-
-    # id = db_sess.query(User).filter(User.id == '1').first()
-    # print(id.id)
-    # news = News(title='Новости от Владимира #2', content='<Больше не опаздываю>', user_id=id.id, is_private=False)
-
-    # user = db_sess.query(User).filter(User.id == '1').first()
-    # subj = News(title='Новости от Владимира #4', content='пошел на обед',  is_private=False)
-    # user.news.append(subj)
-    # db_sess.commit()
-
-    user = db_sess.query(User).filter(User.id == 1).first()
-    for news in user.news:
-        print(news)
-
-
-
-# GET - запрашивает данные, не меняя состояния сервера
-# POST - отправляет данные на сервер
-# PUT - заменяет все текущие данные на сервере, данными запроса
-# DELETE - удаляет указанные данные
-# PATCH - частичная замена данных
+    app.run(host='127.0.0.1', port=5000, debug=True)
