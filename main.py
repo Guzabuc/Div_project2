@@ -1,5 +1,5 @@
 from flask import Flask, url_for, request, redirect
-from flask import render_template
+from flask import render_template, make_response
 import json
 import requests
 from datetime import datetime
@@ -25,6 +25,28 @@ app.config['SQLAlCHEMY_DATABASE_URI'] = 'sqlite:///db/news.sqlite'
 @app.route('/success')
 def success():
     return 'Success'
+
+@app.route('/cookie_test')
+def cookie_test():
+    visit_count = int(request.cookies.get('visit_count', 0))
+    if visit_count:
+        res = make_response(f'Были уже {visit_count+1} раз')
+        res.set_cookie('visit_count',str('visit_count+1'), max_age=60 * 60 * 24 * 365 *2)
+    else:
+        res = make_response('Вы впервые здесь за 2 года')
+        res.set_cookie('visit_count', '1', max_age=60 * 60 * 24 * 365 *2)
+    return res
+@app.route('/mail', methods=['GET'])
+def get_form():
+    return render_template('mail_send.html')
+
+@app.route('/mail', methods=['POST'])
+def post_form():
+    email = request.values.get('email')
+    if send_mail(email, 'Вам письмо', 'Текст письма'):
+        return f'Письмо на адрес {email} отправлено успешно!'
+    return 'Сбой при отправке'
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
