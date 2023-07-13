@@ -4,7 +4,11 @@ import json
 import requests
 from datetime import datetime
 from loginform import LoginForm
+from mail_sender import send_mail
+from dotenv import load_dotenv
 from data import db_session
+from data.users import User
+from data.news import News
 
 
 app = Flask(__name__)
@@ -27,14 +31,10 @@ def login():
     return render_template('login.html', title='Авторизация', form=form)
 
 
-
-
-
 # ошибка 404
 @app.errorhandler(404)
 def http_404_error(error):
     return redirect('/error404')
-
 
 @app.route('/error404')
 def well():  # колодец
@@ -61,10 +61,13 @@ def odd_even():
 
 @app.route('/news')
 def news():
-    with open('news.json', 'rt', encoding='utf-8') as f:
+    with open("news.json", "rt", encoding="utf-8") as f:
         news_list = json.loads(f.read())
-    return render_template('news.html', title='Новости',
+    return render_template('news.html',
+                           title='Новости',
                            news=news_list)
+    # lst = ['ANN', 'TOM', 'BOB']
+    # return render_template('news.html', title="FOR", news=lst)
 
 
 @app.route('/var_test')
@@ -77,76 +80,6 @@ def slogan():
     return 'какая то цитата<br><a href ="/">Назад</a>'
 
 
-@app.route('/countdown')
-def countdown():
-    lst = [str(x) for x in range(10, 0, -1)]
-    lst.append('Start!!!')
-    return '<br>'.join(lst)
-
-
-@app.route('/variants/<int:var>')
-def variants(var):
-    if var == 1:
-        return f"""<!DOCTYPE html>
-                <html lang="en">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>{var}</title>
-                    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N" crossorigin="anonymous">
-                    <link rel="stylesheet" type= "text/css" href="{url_for('static', filename='css/style.css')}">
-                </head>
-                <body>
-                <h1 >Привет, {var}</h1>
-                <dl>
-                  <dt>Режиссер:</dt>
-                    <dd>Петр Точилин</dd>
-                  <dt>В ролях:</dt>
-                    <dd>Андрей Гайдулян</dd>
-                    <dd>Алексей Гаврилов</dd>
-                    <dd>Виталий Гогунский</dd>
-                    <dd>Мария Кожевникова</dd>
-                </dl>
-                
-                <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-                <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct" crossorigin="anonymous"></script>
-                </body>
-                </html>
-"""
-    elif var == 2:
-        return f"""<!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <title>{var}</title>
-                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N" crossorigin="anonymous">
-                <link rel="stylesheet" type= "text/css" href="{url_for('static', filename='css/style.css')}">
-            </head>
-            <body>
-            <h1 >Привет, {var}</h1>
-            <ul>
-             <li>Пункт 1.</li>
-              <li>Пункт 2.
-                <ul>
-                  <li>Подпункт 2.1.</li>
-                   <li>Подпункт 2.2.     
-                    <ul>
-                      <li>Подпункт 2.2.1.</li>
-                      <li>Подпункт 2.2.2.</li>
-                      </ul>
-                   </li>          
-                  <li>Подпункт 2.3.</li>
-                </ul>
-              </li>
-             <li>Пункт 3.</li>
-            </ul>
-            
-            <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct" crossorigin="anonymous"></script>
-            </body>
-            </html>
-            """
-    else:
-        return " не знаю о чем вы"
 
 
 @app.route('/form_sample', methods=['GET', 'POST'])
@@ -209,10 +142,60 @@ if __name__ == '__main__':
     # подключаемся к бд
     db_session.global_init('db/news.sqlite')
 
-    app.run(host='127.0.0.1', port=5000, debug=True)
+    # app.run(host='127.0.0.1', port=5000, debug=True)
+
+    db_sess = db_session.create_session()   # подключение к базе данных
+
+    #  user = db_sess.query(User).first() # одключаюсь к классу User к первому .first пользователю
+    # users = db_sess.query(User).all()  #  ыводит всех
+
+    # в сложных запросах  &- и  |- или
+    # users = db_sess.query(User).filter(User.email.like('%v%'))
+    # аменяем волдемарта на володя
+    # users = db_sess.query(User).filter(User.id == 1).first()
+    # id == 1).first() -
+
+    # for user in users:
+    #     print(user.name)  # Voldemar
+    #     user.name = 'Volodia'
+    #     print(user.name)
+    #     db_sess.commit()  # - заменить содержание
+
+    # удаляем одного пользователя полностью
+    # user = db_sess.query(User).filter(User.name == 'имя').first()
+    # db_sess.delete(user)
+    # db_sess.commit()
+
+    # создание юзеров в таблицу юзер
+    # user = User()
+    # user.name = 'Mark'
+    # user.about = 'Plumer'
+    # user.email = 'plumer_mark@yyy.ru'
+    # db_sess = db_session.create_session()
+    # db_sess.add(user)
+    # db_sess.commit()
+    # присваиваем к новости второй от пользователя его ид  из базы
+    # удалить пользователей у кого ид больше 3
+    # db_sess.query(User).filter(User.id >3).delete()
+
+
+    # id = db_sess.query(User).filter(User.id == '1').first()
+    # print(id.id)
+    # news = News(title='Новости от Владимира #2', content='<Больше не опаздываю>', user_id=id.id, is_private=False)
+
+    # user = db_sess.query(User).filter(User.id == '1').first()
+    # subj = News(title='Новости от Владимира #4', content='пошел на обед',  is_private=False)
+    # user.news.append(subj)
+    # db_sess.commit()
+
+    user = db_sess.query(User).filter(User.id == 1).first()
+    for news in user.news:
+        print(news)
+
+
 
 # GET - запрашивает данные, не меняя состояния сервера
 # POST - отправляет данные на сервер
-# PUT  - заменяет все текущие данные на сервере, данными запроса
+# PUT - заменяет все текущие данные на сервере, данными запроса
 # DELETE - удаляет указанные данные
 # PATCH - частичная замена данных
