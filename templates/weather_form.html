@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
+
+{% if current_user.is_authenticated %}
+  <h2 align="center"> Привет {{current_user.name}}</h2>
+{% endif %}
   <form method="post" class="login_form">
     <input type="text" name="town" class="form-control">
 
