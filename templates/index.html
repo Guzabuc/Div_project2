@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1 alight="center">Новости</h1>
+<!--это объект из news=news-->
+{% for item in news %}
+<div class="col border rounded">
+<!--    все записи целиком, целиком будет выдавать строку-->
+    <h2> {{ item.title }}</h2>
+    <div class="h5" > {{ item.content }} </div>
+    <div class="h5"> {{ item.user.name }} - {{ item.created_date.strftime('%d-%m-%Y %H-%M') }} </div>
+    {% if current_user.is_authenticated and current_user == item.user %}
+        <a href="/news/{{item.id}}" class="btn btn-warning">Изменить</a>
+        <a href="/news_del/{{item.id}}" class="btn btn-danger">Удалить</a>
+    {% endif %}
+
+
+
+</div>
+{% endfor %}
+{% if current_user.is_authenticated %}
+    <br><a href="news" class="btn btn-secondary">Добавить новость</a>
+
+
+{% endif %}
+{% endblock %}
+
