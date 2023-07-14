@@ -1,5 +1,5 @@
 from flask import Flask, url_for, request, redirect
-from flask import render_template, make_response, session
+from flask import render_template, make_response, session, abort
 from flask_login import LoginManager, login_user, login_required, logout_user
 from flask_login import current_user
 import json
@@ -85,6 +85,39 @@ def add_news():
         db_sess.commit()
         return redirect('/')
     return render_template('news.html', title='Добавление новости', form=form)
+
+@app.route('/news/<int:id>', methods=['GET', 'POST'])
+@login_required
+def adit_news(id):
+
+    form = NewsForm()
+
+    if request.method == 'GET': # огда открыли новость
+        db_sess = db_session.create_session()
+        news = db_sess.query(News).filter(News.id == id ,
+                                          News.user == current_user).first()
+        print(News.user_id, id)
+        print(current_user, News.user)
+
+        if news:  # если новость была(есть)
+            form.title.data = news.title
+            form.content.data = news.content
+            form.is_private.data = news.is_private
+        else:
+            abort(404) # включит обработчика ошибки 404
+    if form.validate_on_submit():
+        db_sess = db_session.create_session()
+        news = db_sess.query(News).filter(News.user_id == id,
+                                          News.user == current_user).first()
+        if news:  # если новость была(есть)
+            news.title = form.title.data
+            news.content = form.content.data
+            news.is_private = form.is_private.data
+            db_sess.commit()
+            return redirect('/')
+        else:
+            abort(404)
+    return render_template('news.html', title='Редактирование новости', form=form)
 
 
 @app.route('/var_test')
