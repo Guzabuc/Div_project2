@@ -1,14 +1,18 @@
-from flask import Flask, url_for, request, redirect
+
+from flask import Flask, url_for, request, redirect, jsonify
 from flask import render_template, make_response, session, abort
 from flask_login import LoginManager, login_user, login_required, logout_user
 from flask_login import current_user
-import json
+
 import requests
 import datetime
+
+from flask_restful import Api
+import news_resources
 from loginform import LoginForm
 from mail_sender import send_mail
 from dotenv import load_dotenv
-from data import db_session
+from data import db_session, news_api
 from data.users import User
 from data.news import News
 # forms.user - путь к файлу, импортируем класс RegisterForm
@@ -16,6 +20,7 @@ from forms.user import RegisterForm
 from forms.add_news import NewsForm
 
 app = Flask(__name__)
+api = Api(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
@@ -27,22 +32,25 @@ app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=365)  # го�
 @login_manager.user_loader
 def load_user(user_id):
     db_sess = db_session.create_session()
-    return db_sess.query(User).get(user_id)
+    return db_sess.get(User, user_id)
+
 
 
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
-    return (redirect('/'))
+    return redirect('/')
 
 
 # ошибка 404
 @app.errorhandler(404)
 def http_404_error(error):
-    return redirect('/error404')
+    return make_response(jsonify({'error': f'Новости не найдены'}), 404)
 
-
+@app.errorhandler(400)
+def bad_request(_):
+    return make_response(jsonify({'error': 'Bad Request'}), 400)
 @app.route('/error404')
 def well():  # колодец
     return render_template('well.html')
@@ -118,7 +126,17 @@ def adit_news(id):
         else:
             abort(404)
     return render_template('news.html', title='Редактирование новости', form=form)
-
+@app.route('/news_del/<int:id>', methods=['GET', 'POST'])
+@login_required
+def news_delete(id):
+    db_sess = db_session.create_session()
+    news = db_sess.query(News).filter(News.id == id, News.user == current_user).first()
+    if news:
+        db_sess.delete(news)
+        db_sess.commit()
+    else:
+        abort(404)
+    return redirect('/')
 
 @app.route('/var_test')
 def var_test():
@@ -278,5 +296,16 @@ def post_form():
 
 if __name__ == '__main__':
     db_session.global_init('db/news.sqlite')
+
     db_sess = db_session.create_session()  # подключение к базе данных
+
+    # одключаем  api  с помщьэ blueprint
+     # app.register_blueprint(news_api.blueprint)
+
+    # одключаем api  с помщьэ flasr-restful
+    # для чего регистрируем классы из NewsResource
+    # для списка объектов
+    api.add_resource(news_resources.NewsListReource, '/api/v2/news')
+    # для одного объекта
+    api.add_resource(news_resources.NewsResource, '/api/v2/news/<int:news_id>')
     app.run(host='127.0.0.1', port=5000, debug=True)
